@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+option go_package = "./";
+
+service seller_market {
+  rpc registerSeller(RegisterSellerRequest) returns (RegisterSellerResponse) {}
+  rpc sellItem (SellItemRequest) returns (SellItemResponse) {}
+  rpc updateItem (UpdateItemRequest) returns (UpdateItemResponse) {}
+  rpc deleteItem (DeleteItemRequest) returns (DeleteItemResponse) {}
+  rpc displayItems (DisplayItemsRequest) returns (DisplayItemsResponse) {}
+}
+
+
+service market_seller {
+  rpc NotifyClient (NotifyClientRequest) returns (None) {}
+}
+
+message Notification{
+    int32 item_id = 1;
+    string product_name = 2;
+    string category = 3;
+    int32 quantity = 4;
+    string description = 5;
+    string seller_address = 6;
+    string price_per_unit = 7;
+    float rating = 8;
+  }
+
+message Item {
+    int32 item_id = 1;
+    string product_name = 2;
+    string category = 3;
+    int32 quantity = 4;
+    string description = 5;
+    string seller_address = 6;
+    string price_per_unit = 7;
+}
+  
+message NotifyClientRequest {
+    Item Notification = 1;
+}
+
+message NotifyClientResponse {
+    string status = 1;
+}
+
+message RegisterSellerRequest {
+  string uuid = 1;
+  string listening = 2; 
+  string name = 3;  
+}
+
+message RegisterSellerResponse {
+  string status = 1;
+}
+
+message SellItemRequest {
+  string seller_uuid = 1;
+  string product_name = 2;
+  string category = 3;
+  int32 quantity = 4;
+  string description = 5;
+  string seller_address = 6;
+  int32 price_per_unit = 7;
+}
+
+message SellItemResponse{
+  string status = 1;
+  string item_id = 2;
+}
+
+message UpdateItemRequest{
+  string uuid = 1;
+  int32 item_id = 2;
+  int32 new_price = 3;
+  int32 new_quantity = 4;
+  string new_address = 5;
+}
+
+message UpdateItemResponse{
+  string status = 1;
+}
+
+message DeleteItemRequest{
+  string uuid = 1;
+  int32 item_id = 2;
+}
+
+message DeleteItemResponse{
+  string status = 1;
+}
+
+message DisplayItemsRequest{
+  string uuid = 1;
+}
+
+message DisplayItemsResponse{
+  string status = 1;
+  repeated Item items = 2;
+}
