@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	proto "dscdgrpc/protoc"
 	"fmt"
@@ -12,6 +13,8 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"syscall"
 )
 
@@ -19,18 +22,47 @@ type client_seller_sever struct {
 	proto.UnimplementedMarketSellerServer
 }
 
-func (s *client_seller_sever) NotifyClient(ctx context.Context, in *proto.NotifySellerRequest) (*empty.Empty, error) {
-	fmt.Println("📩 Notification from Market:", in.Notification)
+var notification_ipport string = "localhost:4041"
+var uuid_global uuid.UUID = uuid.UUID{}
+
+func enum_to_category(enumval proto.Category) string {
+	if enumval == proto.Category_ELECTRONICS {
+		return "ELECTRONICS"
+	} else if enumval == proto.Category_FASHION {
+		return "FASHION"
+	} else {
+		return "OTHERS"
+	}
+}
+
+func category_to_enum(category string) proto.Category {
+	if category == "ELECTRONICS" {
+		return proto.Category_ELECTRONICS
+	} else if category == "FASHION" {
+		return proto.Category_FASHION
+	} else {
+		return proto.Category_OTHERS
+	}
+}
+
+func (s *client_seller_sever) NotifySeller(ctx context.Context, in *proto.NotifySellerRequest) (*empty.Empty, error) {
+	fmt.Println("📩 Notification from Market:", in.Notification.Message)
+	fmt.Println("Item ID:", in.Notification.SoldItem.ItemId)
+	fmt.Println("Item Name:", in.Notification.SoldItem.ProductName)
+	fmt.Println("Description:", in.Notification.SoldItem.Description)
+	fmt.Println("Remaining Quantity:", in.Notification.SoldItem.Quantity)
+	fmt.Println("Price:", in.Notification.SoldItem.PricePerUnit)
+	fmt.Println("Rating:", in.Notification.SoldItem.Rating)
+	fmt.Println("Seller Address:", in.Notification.SoldItem.SellerAddress)
+	fmt.Println("---------------------------------")
 	return &empty.Empty{}, nil
 }
 
-func start_client_seller_server(portChan chan string, sigs chan os.Signal) {
-	lis, err := net.Listen("tcp", "localhost:0")
+func start_client_seller_server(sigs chan os.Signal) {
+	lis, err := net.Listen("tcp", notification_ipport)
 	if err != nil {
 		fmt.Println("🔴 Client failed to start listening")
 		fmt.Println("---------------------------------")
-	} else {
-		portChan <- lis.Addr().String()
 	}
 	srv := grpc.NewServer()
 	proto.RegisterMarketSellerServer(srv, &client_seller_sever{})
@@ -46,45 +78,55 @@ func start_client_seller_server(portChan chan string, sigs chan os.Signal) {
 	}()
 }
 
-func RegisterSeller(client proto.MarketClient, portChan chan string) uuid.UUID {
-	var name_first, name_last string
-	uuid := uuid.New()
+func RegisterSeller(client proto.MarketClient) {
+	reader := bufio.NewReader(os.Stdin)
+	var name string
 	fmt.Print("Enter Name (FirstName LastName):")
-	fmt.Scan(&name_first, &name_last)
-	fmt.Println("❗ Your UUID is:", uuid)
-	portchan := <-portChan
-	response, err := client.RegisterSeller(context.Background(), &proto.RegisterSellerRequest{Name: name_first + " " + name_last, Listening: portchan, Uuid: uuid.String()})
+	os.Stdin.Read(make([]byte, 1000))
+	name, _ = reader.ReadString('\n')
+	fmt.Println("❗ Your UUID is:", uuid_global)
+
+	response, err := client.RegisterSeller(context.Background(), &proto.RegisterSellerRequest{Name: name, Listening: notification_ipport, Uuid: uuid_global.String()})
 	if err != nil {
 		fmt.Println("❌ Error:", err)
 	} else {
 		fmt.Println("✅ Response:", response)
 	}
-	return uuid
 }
 
 func SellItem(client proto.MarketClient) {
-	var name string
-	var qty, price_per_unit int
-	var category string
-	var Desc, Addr string
-	var uid string
-	fmt.Print("Enter Item Name: ")
-	fmt.Scan(&name)
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Enter Item Name:")
+	os.Stdin.Read(make([]byte, 1000))
+	name, _ := reader.ReadString('\n')
+	name = strings.TrimSpace(name)
+
 	fmt.Print("Enter Item Quantity: ")
-	fmt.Scan(&qty)
+	qtyStr, _ := reader.ReadString('\n')
+	qty, _ := strconv.Atoi(strings.TrimSpace(qtyStr))
+
 	fmt.Print("Enter Price Per Unit: ")
-	fmt.Scan(&price_per_unit)
-	fmt.Print("Enter Item Category: ")
-	fmt.Scan(&category)
+	priceStr, _ := reader.ReadString('\n')
+	price_per_unit, _ := strconv.Atoi(strings.TrimSpace(priceStr))
+
+	fmt.Print("Enter Item Category (ELECTRONICS/FASHION/OTHERS): ")
+	category, _ := reader.ReadString('\n')
+	category = strings.TrimSpace(category)
+	var enum_category proto.Category
+	if category == "ELECTRONICS" {
+		enum_category = proto.Category_ELECTRONICS
+	} else if category == "FASHION" {
+		enum_category = proto.Category_FASHION
+	} else {
+		enum_category = proto.Category_OTHERS
+	}
+
 	fmt.Print("Enter Description: ")
-	fmt.Scan(&Addr)
-	fmt.Print("Enter Seller UUID: ")
-	fmt.Scan(&uid)
-	seller_uuid, _ := uuid.Parse(uid)
-	seller_uuid_string := seller_uuid.String()
-	request := &proto.SellItemRequest{SellerUuid: seller_uuid_string, ProductName: name, Category: category, Quantity: int32(qty), Description: Desc, PricePerUnit: int32(price_per_unit)}
-	fmt.Println(request)
-	response, err := client.SellItem(context.Background(), &proto.SellItemRequest{SellerUuid: uid, ProductName: name, Category: category, Quantity: int32(qty), Description: Desc, PricePerUnit: int32(price_per_unit)})
+	Desc, _ := reader.ReadString('\n')
+	Desc = strings.TrimSpace(Desc)
+	uuid_string := uuid_global.String()
+	fmt.Println("❗ Your UUID is:", uuid_global)
+	response, err := client.SellItem(context.Background(), &proto.SellItemRequest{SellerUuid: uuid_string, ProductName: name, Category: enum_category, Quantity: int32(qty), Description: Desc, PricePerUnit: int32(price_per_unit), Listening: notification_ipport})
 	if err != nil {
 		fmt.Println("❌ Error:", err)
 		fmt.Println("---------------------------------")
@@ -157,7 +199,7 @@ func DisplaySellerItems(client proto.MarketClient) {
 }
 
 func main() {
-
+	uuid_global = uuid.New()
 	//Setup connection parameters
 	fmt.Println("SELLER CLIENT IS RUNNING...")
 	var ip, port string
@@ -165,7 +207,6 @@ func main() {
 	fmt.Scan(&ip)
 	fmt.Print("Enter Port: ")
 	fmt.Scan(&port)
-	portChan := make(chan string)
 
 	//handle shutdown
 	sigs := make(chan os.Signal, 1)
@@ -177,7 +218,7 @@ func main() {
 	}()
 
 	//start a seperate routine for client notifications
-	go start_client_seller_server(portChan, sigs)
+	go start_client_seller_server(sigs)
 
 	//connect to server
 	conn, err := grpc.Dial(ip+":"+port, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -202,7 +243,7 @@ func main() {
 		fmt.Scan(&choice)
 		switch choice {
 		case 1:
-			RegisterSeller(client, portChan)
+			RegisterSeller(client)
 		case 2:
 			SellItem(client)
 		case 3:

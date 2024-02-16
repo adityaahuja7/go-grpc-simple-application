@@ -24,35 +24,36 @@ service market_buyer{
   rpc NotifyBuyer (NotifyBuyerRequest) returns (google.protobuf.Empty) {}
 }
 
-message Notification{
-    string message = 1;
-    int32 item_id = 2;
-    string product_name = 3;
-    string category = 4;
-    int32 quantity = 5;
-    string description = 6;
-    string seller_address = 7;
-    string price_per_unit = 8;
-    float rating = 9;
-  }
+enum Category{
+  ELECTRONICS = 0;
+  FASHION = 1;
+  OTHERS = 2;
+}
+
+
 
 message Item {
     int32 item_id = 1;
     string product_name = 2;
-    string category = 3;
+    Category category = 3;
     int32 quantity = 4;
     string description = 5;
     string seller_address = 6;
     string price_per_unit = 7;
     float rating = 8;
 }
+
+message Notification{
+  string message = 1;
+  Item sold_item = 2;
+}
   
 message NotifySellerRequest {
-    Item Notification = 1;
+    Notification Notification = 1;
 }
 
 message NotifyBuyerRequest {
-    Item Notification = 1;
+    Notification Notification = 1;
 }
 
 
@@ -69,10 +70,11 @@ message RegisterSellerResponse {
 message SellItemRequest {
   string seller_uuid = 1;
   string product_name = 2;
-  string category = 3;
+  Category category = 3;
   int32 quantity = 4;
   string description = 5;
   int32 price_per_unit = 6;
+  string listening = 7;
 }
 
 message SellItemResponse{
@@ -110,8 +112,10 @@ message DisplayItemsResponse{
 }
 
 message searchItemRequest{
+
   string product_name = 1;
-  string product_category = 2;
+  string category = 2;
+  string listening = 3;
 }
 
 message searchItemResponse{
@@ -141,6 +145,7 @@ message AddToWishlistResponse{
 message RateItemRequest{
   int32 item_id = 1;
   int32 rating = 2;
+  string listening = 3;
 }
 
 message RateItemResponse{
