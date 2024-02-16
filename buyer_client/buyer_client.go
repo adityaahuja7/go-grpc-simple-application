@@ -15,7 +15,7 @@ import (
 	"bufio"
 )
 
-var notification_ipport string
+var notification_ipport string = "10.160.0.2:4040"
 
 func enum_to_category(enumval proto.Category) string {
 	if enumval == proto.Category_ELECTRONICS {
@@ -79,6 +79,7 @@ func searchItem(client proto.MarketClient) {
 	var product_name, product_category string
 	fmt.Print("Enter Product Name: ")
 	product_name,_ = reader.ReadString('\n')
+	product_name = product_name[:len(product_name)-1]
 	fmt.Print("Enter Product Category: ")
 	fmt.Scan(&product_category)
 	response, err := client.SearchItems(context.Background(), &proto.SearchItemRequest{ProductName: product_name, Category: product_category})
@@ -148,8 +149,6 @@ func main() {
 	fmt.Scan(&ip)
 	fmt.Print("Enter Port: ")
 	fmt.Scan(&port)
-	fmt.Print("Enter Notification IP:PORT: ")
-	fmt.Scan(&notification_ipport)
 
 	//handle shutdown
 	sigs := make(chan os.Signal, 1)
