@@ -15,7 +15,7 @@ import (
 	"bufio"
 )
 
-var notification_ipport string = "10.160.0.2:4040"
+var notification_ipport string = "[::]:50051"
 
 func enum_to_category(enumval proto.Category) string {
 	if enumval == proto.Category_ELECTRONICS {
