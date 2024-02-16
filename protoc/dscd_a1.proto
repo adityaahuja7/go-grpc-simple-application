@@ -1,29 +1,39 @@
 syntax = "proto3";
+import "google/protobuf/empty.proto";
 
 option go_package = "./";
 
-service seller_market {
+service market {
   rpc registerSeller(RegisterSellerRequest) returns (RegisterSellerResponse) {}
   rpc sellItem (SellItemRequest) returns (SellItemResponse) {}
   rpc updateItem (UpdateItemRequest) returns (UpdateItemResponse) {}
   rpc deleteItem (DeleteItemRequest) returns (DeleteItemResponse) {}
   rpc displayItems (DisplayItemsRequest) returns (DisplayItemsResponse) {}
+  rpc searchItems (searchItemRequest) returns (searchItemResponse) {}
+  rpc buyItem (BuyItemRequest) returns (BuyItemResponse) {}
+  rpc addToWishlist (AddToWishlistRequest) returns (AddToWishlistResponse) {}
+  rpc rateItem (RateItemRequest) returns (RateItemResponse) {}
 }
 
 
 service market_seller {
-  rpc NotifyClient (NotifyClientRequest) returns (None) {}
+  rpc NotifySeller (NotifySellerRequest) returns (google.protobuf.Empty) {}
+}
+
+service market_buyer{
+  rpc NotifyBuyer (NotifyBuyerRequest) returns (google.protobuf.Empty) {}
 }
 
 message Notification{
-    int32 item_id = 1;
-    string product_name = 2;
-    string category = 3;
-    int32 quantity = 4;
-    string description = 5;
-    string seller_address = 6;
-    string price_per_unit = 7;
-    float rating = 8;
+    string message = 1;
+    int32 item_id = 2;
+    string product_name = 3;
+    string category = 4;
+    int32 quantity = 5;
+    string description = 6;
+    string seller_address = 7;
+    string price_per_unit = 8;
+    float rating = 9;
   }
 
 message Item {
@@ -34,15 +44,17 @@ message Item {
     string description = 5;
     string seller_address = 6;
     string price_per_unit = 7;
+    float rating = 8;
 }
   
-message NotifyClientRequest {
+message NotifySellerRequest {
     Item Notification = 1;
 }
 
-message NotifyClientResponse {
-    string status = 1;
+message NotifyBuyerRequest {
+    Item Notification = 1;
 }
+
 
 message RegisterSellerRequest {
   string uuid = 1;
@@ -60,8 +72,7 @@ message SellItemRequest {
   string category = 3;
   int32 quantity = 4;
   string description = 5;
-  string seller_address = 6;
-  int32 price_per_unit = 7;
+  int32 price_per_unit = 6;
 }
 
 message SellItemResponse{
@@ -74,7 +85,6 @@ message UpdateItemRequest{
   int32 item_id = 2;
   int32 new_price = 3;
   int32 new_quantity = 4;
-  string new_address = 5;
 }
 
 message UpdateItemResponse{
@@ -97,4 +107,42 @@ message DisplayItemsRequest{
 message DisplayItemsResponse{
   string status = 1;
   repeated Item items = 2;
+}
+
+message searchItemRequest{
+  string product_name = 1;
+  string product_category = 2;
+}
+
+message searchItemResponse{
+  string status = 1;
+  repeated Item items = 2;
+}
+
+message BuyItemRequest{
+  int32 item_id = 1;
+  int32 quantity = 2;
+  string listening = 3;
+}
+
+message BuyItemResponse{
+  string status = 1;
+}
+
+message AddToWishlistRequest{
+  int32 item_id = 1;
+  string listening = 2;
+}
+
+message AddToWishlistResponse{
+  string status = 1;
+}
+
+message RateItemRequest{
+  int32 item_id = 1;
+  int32 rating = 2;
+}
+
+message RateItemResponse{
+  string status = 1;
 }
