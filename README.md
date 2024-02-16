@@ -1,14 +1,18 @@
 
-# Simple gRPC Market Application
+# gRPC-Based Marketplace Application
 
-## About the Project
-- This application was developed as a part of the *Distributed Systems Concepts & Designs (CSE530)* course curriculum.
+## Project Overview
+This project, a part of the *Distributed Systems Concepts & Designs (CSE530)* course, is a marketplace application developed using the[ **Go programming language**](https://go.dev). It leverages [**gRPC**](https://grpc.io), a high-performance, open-source universal RPC framework, to manage procedural calls between the Market (Server) and the Buyers/Sellers (Clients). Since this was a course project with a strict deadline, even though error handling has been implemented, there may be potential bugs in the scripts.
 
-- The application is developed in [**GO**](https://go.dev).
+## Setup Instructions
 
-- [**gRPC**](https://grpc.io) is used to handle the procedural calls from the Market (Server) to the Buyers/Sellers (Clients) and vice versa
+### System Requirements
+- A Linux machine with bash shell access
 
+### Installation Steps
+1. Clone the [project repository](https://github.com/adityaahuja7/go-grpc-simple-application/tree/master).
+2. Execute the `install_script.sh` script to set up the Go environment.
+3. Compile and execute the `server.go`, `seller_client.go`, and `buyer_client.go` Go programs using the command `go run <program>.go`.
 
-<p align="center>
-<img  width="460" height="300" src = "/Images/Platform.png>
-</p>
+Please note that these instructions assume familiarity with the Go programming language and gRPC. If you're new to these technologies, you might want to explore some tutorials or documentation first.
+
