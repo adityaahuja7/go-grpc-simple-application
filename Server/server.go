@@ -137,33 +137,33 @@ func (s *server) SellItem(ctx context.Context, request *proto.SellItemRequest) (
 		return &proto.SellItemResponse{Status: "FAIL"}, nil
 	} else {
 		fmt.Println("❗ SellItem Request from Seller:", request.Listening)
-		newItemId := running_id
-		running_id++
-		newItemName := request.ProductName
-		newItemQty := request.Quantity
-		newItemPrice := request.PricePerUnit
-		newItemCategory := request.Category
-		newItemDesc := request.Description
-		newItemSellerUuid, _ := uuid.Parse(request.SellerUuid)
-		var newItemSellerAddress string
-		for _, seller := range list_of_sellers {
+		for _,seller := range list_of_sellers {
 			if seller.Uuid.String() == request.SellerUuid {
-				newItemSellerAddress = seller.Ipport
+				newItemId := running_id
+				running_id++
+				newItemName := request.ProductName
+				newItemQty := request.Quantity
+				newItemPrice := request.PricePerUnit
+				newItemCategory := request.Category
+				newItemDesc := request.Description
+				newItemSellerUuid, _ := uuid.Parse(request.SellerUuid)
+				newItemSellerAddress := request.Listening
+				fmt.Println("New Item ID:", newItemId)
+				fmt.Println("New Item Name:", newItemName)
+				fmt.Println("New Item Quantity:", newItemQty)
+				fmt.Println("New Item Price:", newItemPrice)
+				fmt.Println("New Item Category:", enum_to_category(newItemCategory))
+				fmt.Println("New Item Description:", newItemDesc)
+				fmt.Println("New Item Seller UUID:", newItemSellerUuid)
+				fmt.Println("New Item Seller Address:", newItemSellerAddress)
+				fmt.Println("---------------------------------")
+				newItem := product_struct{ItemID: int32(newItemId), SellerUUID: newItemSellerUuid, Name: newItemName, Price: newItemPrice, Qty: newItemQty, Category: enum_to_category(newItemCategory), SellerAddress: newItemSellerAddress, PricePerUnit: newItemPrice, Rating: 0.0, Description: newItemDesc, RatedBy: nil, Wishlist: nil}
+				list_of_products = append(list_of_products, newItem)
+				response_message := "SUCCESS! Your Item-ID is " + fmt.Sprint(newItemId)
+				return &proto.SellItemResponse{Status: response_message}, nil
 			}
 		}
-		fmt.Println("New Item ID:", newItemId)
-		fmt.Println("New Item Name:", newItemName)
-		fmt.Println("New Item Quantity:", newItemQty)
-		fmt.Println("New Item Price:", newItemPrice)
-		fmt.Println("New Item Category:", enum_to_category(newItemCategory))
-		fmt.Println("New Item Description:", newItemDesc)
-		fmt.Println("New Item Seller UUID:", newItemSellerUuid)
-		fmt.Println("New Item Seller Address:", newItemSellerAddress)
-		fmt.Println("---------------------------------")
-		newItem := product_struct{ItemID: int32(newItemId), SellerUUID: newItemSellerUuid, Name: newItemName, Price: newItemPrice, Qty: newItemQty, Category: enum_to_category(newItemCategory), SellerAddress: newItemSellerAddress, PricePerUnit: newItemPrice, Rating: 0.0, Description: newItemDesc, RatedBy: nil, Wishlist: nil}
-		list_of_products = append(list_of_products, newItem)
-		response_message := "SUCCESS! Your Item-ID is " + fmt.Sprint(newItemId)
-		return &proto.SellItemResponse{Status: response_message}, nil
+		return &proto.SellItemResponse{Status: "FAIL! (Not Registered)"}, nil
 	}
 }
 
