@@ -10,5 +10,5 @@
 
 
 <p align="center>
-<img  width="460" height="300" src = "https://github.com/adityaahuja7/go-grpc-simple-application/blob/master/Images/Platform.png">
+<img  width="460" height="300" src = "https://github.com/adityaahuja7/go-grpc-simple-application/blob/master/Images/Platform.png?raw=true" />
 </p>
