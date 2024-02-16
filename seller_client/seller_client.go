@@ -82,7 +82,6 @@ func RegisterSeller(client proto.MarketClient) {
 	reader := bufio.NewReader(os.Stdin)
 	var name string
 	fmt.Print("Enter Name:")
-	os.Stdin.Read(make([]byte, 1000))
 	name, _ = reader.ReadString('\n')
 	fmt.Println("❗ Your UUID is:", uuid_global)
 
@@ -97,7 +96,6 @@ func RegisterSeller(client proto.MarketClient) {
 func SellItem(client proto.MarketClient) {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("Enter Item Name:")
-	os.Stdin.Read(make([]byte, 1000))
 	name, _ := reader.ReadString('\n')
 	name = strings.TrimSpace(name)
 

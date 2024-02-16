@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"bufio"
 )
 
 var notification_ipport string
@@ -74,10 +75,10 @@ func start_client_buyer_server(sigs chan os.Signal) {
 }
 
 func searchItem(client proto.MarketClient) {
+	reader := bufio.NewReader(os.Stdin)
 	var product_name, product_category string
 	fmt.Print("Enter Product Name: ")
-	fmt.Scanf("%s\n", &product_name)
-	os.Stdin.Read(make([]byte, 1000))
+	product_name,_ = reader.ReadString('\n')
 	fmt.Print("Enter Product Category: ")
 	fmt.Scan(&product_category)
 	response, err := client.SearchItems(context.Background(), &proto.SearchItemRequest{ProductName: product_name, Category: product_category})
