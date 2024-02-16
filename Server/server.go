@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/reflection"
 	"net"
 )
@@ -70,7 +69,7 @@ func NotifySeller(ipport string, item_index int) {
 	client := proto.NewMarketSellerClient(conn)
 	for _, item := range list_of_products {
 		if item.ItemID == int32(item_index) {
-			sold_item := proto.Item{ItemId: item.ItemID, ProductName: item.Name, Quantity: item.Qty, PricePerUnit: fmt.Sprint(item.PricePerUnit), Category: category_to_enum(item.Category), Description: item.Description, SellerAddress: item.SellerAddress, Rating: item.Rating}
+			sold_item := proto.Item{ItemId: item.ItemID, ProductName: item.Name, Quantity: item.Qty, PricePerUnit: item.PricePerUnit, Category: category_to_enum(item.Category), Description: item.Description, SellerAddress: item.SellerAddress, Rating: item.Rating}
 			message := "Your item " + item.Name + " has been sold"
 			notification := &proto.Notification{Message: message, SoldItem: &sold_item}
 			_, err := client.NotifySeller(context.Background(), &proto.NotifySellerRequest{Notification: notification})
@@ -94,7 +93,7 @@ func NotifyBuyer(item_index int) {
 				}
 				defer conn.Close()
 				client := proto.NewMarketBuyerClient(conn)
-				modified_item := proto.Item{ItemId: item.ItemID, ProductName: item.Name, Quantity: item.Qty, PricePerUnit: fmt.Sprint(item.PricePerUnit), Category: category_to_enum(item.Category), Description: item.Description, SellerAddress: item.SellerAddress, Rating: item.Rating}
+				modified_item := proto.Item{ItemId: item.ItemID, ProductName: item.Name, Quantity: item.Qty, PricePerUnit: item.PricePerUnit, Category: category_to_enum(item.Category), Description: item.Description, SellerAddress: item.SellerAddress, Rating: item.Rating}
 				message := "Your wishlisted item " + item.Name + " has been modified"
 				notification := &proto.Notification{Message: message, SoldItem: &modified_item}
 				_, err = client.NotifyBuyer(context.Background(), &proto.NotifyBuyerRequest{Notification: notification})
@@ -114,7 +113,13 @@ func (s *server) RegisterSeller(ctx context.Context, request *proto.RegisterSell
 	if request.Uuid == "" {
 		return &proto.RegisterSellerResponse{Status: "FAIL"}, nil
 	} else {
-		fmt.Println("❗ Register Seller Request from:", request.Name)
+		fmt.Println("❗ Register Seller Request from:", request.Listening)
+		for _,sellers := range list_of_sellers {
+			if sellers.Uuid.String() == request.Uuid {
+				return &proto.RegisterSellerResponse{Status: "FAIL! (Alreay Registered!)"}, nil
+			}
+		}
+
 		newSellerName := request.Name
 		newSellerUuid, _ := uuid.Parse(request.Uuid)
 		newSellerListening := request.Listening
@@ -131,7 +136,7 @@ func (s *server) SellItem(ctx context.Context, request *proto.SellItemRequest) (
 	if request.SellerUuid == "" {
 		return &proto.SellItemResponse{Status: "FAIL"}, nil
 	} else {
-		fmt.Println("❗ SellItem Request from Seller:")
+		fmt.Println("❗ SellItem Request from Seller:", request.Listening)
 		newItemId := running_id
 		running_id++
 		newItemName := request.ProductName
@@ -163,11 +168,10 @@ func (s *server) SellItem(ctx context.Context, request *proto.SellItemRequest) (
 }
 
 func (s *server) UpdateItem(ctx context.Context, request *proto.UpdateItemRequest) (*proto.UpdateItemResponse, error) {
-	client_ip, _ := peer.FromContext(ctx)
 	if request.Uuid == "" {
-		return &proto.UpdateItemResponse{Status: "FAIL"}, nil
+		return &proto.UpdateItemResponse{Status: "FAIL! (Empty UUID)"}, nil
 	} else {
-		fmt.Println("❗ Update item request from seller:", client_ip.Addr.String())
+		fmt.Println("❗ Update item request from seller:", request.Listening, "for item:", request.ItemId)
 		item_id := request.ItemId
 		seller_uuid := request.Uuid
 		for _, seller := range list_of_sellers {
@@ -184,17 +188,16 @@ func (s *server) UpdateItem(ctx context.Context, request *proto.UpdateItemReques
 				}
 			}
 		}
-		return &proto.UpdateItemResponse{Status: "FAIL"}, nil
+		return &proto.UpdateItemResponse{Status: "FAIL! (Not Registered)"}, nil
 
 	}
 }
 
 func (s *server) DeleteItem(ctx context.Context, request *proto.DeleteItemRequest) (*proto.DeleteItemResponse, error) {
-	client_ip, _ := peer.FromContext(ctx)
 	if request.Uuid == "" {
 		return &proto.DeleteItemResponse{Status: "FAIL"}, nil
 	} else {
-		fmt.Println("❗ Delete item request from seller:", client_ip.Addr.String())
+		fmt.Println("❗ Delete item request from seller:", request.Listening, "for item:", request.ItemId)
 		item_id := request.ItemId
 		seller_uuid := request.Uuid
 		for _, seller := range list_of_sellers {
@@ -214,21 +217,23 @@ func (s *server) DeleteItem(ctx context.Context, request *proto.DeleteItemReques
 }
 
 func (s *server) DisplayItems(ctx context.Context, request *proto.DisplayItemsRequest) (*proto.DisplayItemsResponse, error) {
-	client_ip, _ := peer.FromContext(ctx)
-	fmt.Println("❗ Display item request from seller:", client_ip.Addr.String())
+	fmt.Println("❗ Display item request from seller:", request.Listening)
 	fmt.Println("---------------------------------")
 	for _, sellers := range list_of_sellers {
+		println("Seller UUID:", sellers.Uuid.String())
+		println("Request UUID:", request.Uuid)
 		if sellers.Uuid.String() == request.Uuid {
-			var items []*proto.Item
-			for _, product := range list_of_products {
-				item := proto.Item{ItemId: product.ItemID, ProductName: product.Name, Quantity: product.Qty, PricePerUnit: fmt.Sprint(product.PricePerUnit), Category: category_to_enum(product.Category), Description: product.SellerAddress, SellerAddress: product.SellerAddress, Rating: product.Rating}
-				items = append(items, &item)
+			for _,products := range list_of_products {
+				if products.SellerUUID.String() == request.Uuid {
+					item := proto.Item{ItemId: products.ItemID, ProductName: products.Name, Quantity: products.Qty, PricePerUnit: products.PricePerUnit, Category: category_to_enum(products.Category), Description: products.Description, SellerAddress: products.SellerAddress, Rating: products.Rating}
+					items := append([]*proto.Item{}, &item)
+					status := "SUCCESS"
+					return &proto.DisplayItemsResponse{Status: status, Items: items}, nil
+				}
 			}
-			status := "SUCCESS"
-			return &proto.DisplayItemsResponse{Status: status, Items: items}, nil
 		}
 	}
-	return &proto.DisplayItemsResponse{Status: "FAIL!"}, nil
+	return &proto.DisplayItemsResponse{Status: "FAIL! (No relevant items found)"}, nil
 }
 
 func (s *server) SearchItems(ctx context.Context, request *proto.SearchItemRequest) (*proto.SearchItemResponse, error) {
@@ -238,18 +243,18 @@ func (s *server) SearchItems(ctx context.Context, request *proto.SearchItemReque
 	for _, product := range list_of_products {
 		if request.ProductName == "" {
 			if product.Category == request.Category {
-				item := proto.Item{ItemId: product.ItemID, ProductName: product.Name, Quantity: product.Qty, PricePerUnit: fmt.Sprint(product.PricePerUnit), Category: category_to_enum(product.Category), Description: product.Description, SellerAddress: product.SellerAddress, Rating: product.Rating}
+				item := proto.Item{ItemId: product.ItemID, ProductName: product.Name, Quantity: product.Qty, PricePerUnit: product.PricePerUnit, Category: category_to_enum(product.Category), Description: product.Description, SellerAddress: product.SellerAddress, Rating: product.Rating}
 				items = append(items, &item)
 			} else if request.Category == "ANY" {
-				item := proto.Item{ItemId: product.ItemID, ProductName: product.Name, Quantity: product.Qty, PricePerUnit: fmt.Sprint(product.PricePerUnit), Category: category_to_enum(product.Category), Description: product.SellerAddress, SellerAddress: product.SellerAddress, Rating: product.Rating}
+				item := proto.Item{ItemId: product.ItemID, ProductName: product.Name, Quantity: product.Qty, PricePerUnit: product.PricePerUnit, Category: category_to_enum(product.Category), Description: product.SellerAddress, SellerAddress: product.SellerAddress, Rating: product.Rating}
 				items = append(items, &item)
 			}
 		} else {
 			if product.Name == request.ProductName && product.Category == request.Category {
-				item := proto.Item{ItemId: product.ItemID, ProductName: product.Name, Quantity: product.Qty, PricePerUnit: fmt.Sprint(product.PricePerUnit), Category: category_to_enum(product.Category), Description: product.Description, SellerAddress: product.SellerAddress, Rating: product.Rating}
+				item := proto.Item{ItemId: product.ItemID, ProductName: product.Name, Quantity: product.Qty, PricePerUnit: product.PricePerUnit, Category: category_to_enum(product.Category), Description: product.Description, SellerAddress: product.SellerAddress, Rating: product.Rating}
 				items = append(items, &item)
 			} else if request.Category == "ANY" {
-				item := proto.Item{ItemId: product.ItemID, ProductName: product.Name, Quantity: product.Qty, PricePerUnit: fmt.Sprint(product.PricePerUnit), Category: category_to_enum(product.Category), Description: product.Description, SellerAddress: product.SellerAddress, Rating: product.Rating}
+				item := proto.Item{ItemId: product.ItemID, ProductName: product.Name, Quantity: product.Qty, PricePerUnit: product.PricePerUnit, Category: category_to_enum(product.Category), Description: product.Description, SellerAddress: product.SellerAddress, Rating: product.Rating}
 				items = append(items, &item)
 			}
 		}

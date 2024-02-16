@@ -39,7 +39,7 @@ message Item {
     int32 quantity = 4;
     string description = 5;
     string seller_address = 6;
-    string price_per_unit = 7;
+    int32 price_per_unit = 7;
     float rating = 8;
 }
 
@@ -87,6 +87,7 @@ message UpdateItemRequest{
   int32 item_id = 2;
   int32 new_price = 3;
   int32 new_quantity = 4;
+  string listening = 5;
 }
 
 message UpdateItemResponse{
@@ -96,6 +97,7 @@ message UpdateItemResponse{
 message DeleteItemRequest{
   string uuid = 1;
   int32 item_id = 2;
+  string listening = 3;
 }
 
 message DeleteItemResponse{
@@ -104,6 +106,7 @@ message DeleteItemResponse{
 
 message DisplayItemsRequest{
   string uuid = 1;
+  string listening = 2;
 }
 
 message DisplayItemsResponse{

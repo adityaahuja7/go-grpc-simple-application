@@ -81,7 +81,7 @@ func start_client_seller_server(sigs chan os.Signal) {
 func RegisterSeller(client proto.MarketClient) {
 	reader := bufio.NewReader(os.Stdin)
 	var name string
-	fmt.Print("Enter Name (FirstName LastName):")
+	fmt.Print("Enter Name:")
 	os.Stdin.Read(make([]byte, 1000))
 	name, _ = reader.ReadString('\n')
 	fmt.Println("❗ Your UUID is:", uuid_global)
@@ -137,19 +137,17 @@ func SellItem(client proto.MarketClient) {
 }
 
 func UpdateItem(client proto.MarketClient) {
-	var seller_uuid string
 	var item_id int32
 	var new_price int32
 	var new_qty int32
-	fmt.Print("Enter Seller UUID: ")
-	fmt.Scan(&seller_uuid)
 	fmt.Print("Enter Item ID: ")
 	fmt.Scan(&item_id)
 	fmt.Print("Enter New Price: ")
 	fmt.Scan(&new_price)
 	fmt.Print("Enter New Quantity: ")
 	fmt.Scan(&new_qty)
-	update_request := &proto.UpdateItemRequest{Uuid: seller_uuid, ItemId: item_id, NewPrice: new_price, NewQuantity: new_qty}
+	uuid_string := uuid_global.String()
+	update_request := &proto.UpdateItemRequest{Uuid: uuid_string, ItemId: item_id, NewPrice: new_price, NewQuantity: new_qty}
 	response, err := client.UpdateItem(context.Background(), update_request)
 	if err != nil {
 		fmt.Println("❌ Error:", err)
@@ -161,13 +159,11 @@ func UpdateItem(client proto.MarketClient) {
 }
 
 func DeleteItem(client proto.MarketClient) {
-	var seller_uuid string
 	var item_id int32
-	fmt.Print("Enter Seller UUID: ")
-	fmt.Scan(&seller_uuid)
 	fmt.Print("Enter Item ID: ")
 	fmt.Scan(&item_id)
-	delete_request := &proto.DeleteItemRequest{Uuid: seller_uuid, ItemId: item_id}
+	uuid_string := uuid_global.String()
+	delete_request := &proto.DeleteItemRequest{Uuid: uuid_string, ItemId: item_id, Listening: notification_ipport}
 	response, err := client.DeleteItem(context.Background(), delete_request)
 	if err != nil {
 		fmt.Println("❌ Error:", err)
@@ -179,10 +175,8 @@ func DeleteItem(client proto.MarketClient) {
 }
 
 func DisplaySellerItems(client proto.MarketClient) {
-	var seller_uuid string
-	fmt.Print("Enter Seller UUID: ")
-	fmt.Scan(&seller_uuid)
-	display_request := &proto.DisplayItemsRequest{Uuid: seller_uuid}
+	uuid_string := uuid_global.String()
+	display_request := &proto.DisplayItemsRequest{Uuid: uuid_string, Listening: notification_ipport}
 	response, err := client.DisplayItems(context.Background(), display_request)
 	if err != nil {
 		fmt.Println("❌ Error:", err)
